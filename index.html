@@ -1,77 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Plant Disease Predictor</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; background-color: #f4f4f4; }
-        h1 { color: #333; }
-        form { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input[type="file"] { margin: 20px 0; }
-        button { padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
-        button:hover { background: #45a049; }
-        #result { margin-top: 20px; font-weight: bold; color: #333; }
-        img { max-width: 300px; margin-top: 10px; border-radius: 8px; }
-        .error { color: red; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            max-width: 400px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input[type="file"] {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        img {
+            max-width: 300px;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+        .error {
+            color: red;
+        }
+        /* Layout for side-by-side image and results */
+        #output-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        #uploadedImage {
+            max-width: 300px;
+            border-radius: 8px;
+            display: none;
+        }
+        #result-text {
+            max-width: 350px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
     <h1>AI Plant Disease Predictor</h1>
     <p>Upload a photo of a plant leaf to predict the disease and get pesticide suggestions.</p>
     <form id="uploadForm">
-        <input type="file" id="fileInput" accept="image/*" required>
+        <input type="file" id="fileInput" accept="image/*" required />
         <button type="submit">Predict Disease</button>
     </form>
-    <div id="result"></div>
-    <img id="uploadedImage" style="display: none;" alt="Uploaded Image">
+
+    <div id="output-container">
+        <img id="uploadedImage" alt="Uploaded Image" />
+        <div id="result-text">
+            <div id="result"></div>
+        </div>
+    </div>
 
     <script>
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();  // Prevent page reload
-            
+            e.preventDefault();
+
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
+
             if (!file) {
                 document.getElementById('result').innerHTML = '<p class="error">Please select a file.</p>';
                 return;
             }
-            
+
             // Show the uploaded image
             const reader = new FileReader();
             reader.onload = (e) => {
-                document.getElementById('uploadedImage').src = e.target.result;
-                document.getElementById('uploadedImage').style.display = 'block';
+                const img = document.getElementById('uploadedImage');
+                img.src = e.target.result;
+                img.style.display = 'block';
             };
             reader.readAsDataURL(file);
-            
-            // Prepare data to send to backend
+
+            // Prepare form data
             const formData = new FormData();
             formData.append('file', file);
-            
-            // Show loading message
+
             document.getElementById('result').innerHTML = '<p>Processing...</p>';
-            
+
             try {
-                // Send request to backend
                 const response = await fetch('http://127.0.0.1:5000/predict', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const result = await response.json();
+
                 if (response.ok) {
                     document.getElementById('result').innerHTML = `
                         <p>Predicted Disease: <strong>${result.disease}</strong></p>
+                        <p>Confidence: <strong>${result.confidence}%</strong></p>
                         <p>Suggested Pesticide: <strong>${result.pesticide}</strong></p>
-                        <p class="error"><em>Disclaimer: This is a demo. Consult experts for real advice.</em></p>
+                        <p style="font-size: 0.6em; color: #666; margin-top: 15px;">
+                            <em>Predictions are based on trained AI models and aim to assist diagnosis. For precise treatment, please consult agricultural experts.</em>
+                        </p>
                     `;
                 } else {
                     document.getElementById('result').innerHTML = `<p class="error">Error: ${result.error}</p>`;
                 }
             } catch (error) {
                 document.getElementById('result').innerHTML = '<p class="error">Error connecting to server. Check if the backend is running.</p>';
-                console.error('Fetch error:', error);  // Logs to browser console
+                console.error('Fetch error:', error);
             }
         });
     </script>
